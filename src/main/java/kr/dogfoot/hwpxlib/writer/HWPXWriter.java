@@ -42,6 +42,12 @@ public class HWPXWriter {
         return baos.toByteArray();
     }
 
+    public void toStream(OutputStream outputStream) throws Exception {
+        createZIPFile(outputStream);
+        write();
+        close();
+        outputStream.close();
+    }
     private final HWPXFile hwpxFile;
     private ElementWriterManager elementWriterManager;
     private ZipOutputStream zos;
@@ -52,7 +58,9 @@ public class HWPXWriter {
     }
 
     public void createZIPFile(OutputStream outputStream) {
-        zos = new ZipOutputStream(outputStream);
+        if (zos == null) {
+            zos = new ZipOutputStream(outputStream);
+        }
     }
 
     private void write() throws Exception {
@@ -114,6 +122,12 @@ public class HWPXWriter {
     public void META_INF_container_xml() throws Exception {
         writeChild(ElementWriterSort.Container, hwpxFile.containerXMLFile());
         putIntoZip(ZipEntryName.Container, xsb().toString(), StandardCharsets.UTF_8);
+    }
+
+    public void binData(String id, String extension, byte[] binary) throws IOException {
+        String entryName = "BinData/" + id + "." + extension;
+        hwpxFile.contentHPFFile().manifest().addNew().idAnd(id).hrefAnd(entryName).mediaTypeAnd("image/" + extension).embedded(true);
+        putIntoZip(entryName, binary);
     }
 
     private void content_hpf() throws Exception {
